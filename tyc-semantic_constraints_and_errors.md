@@ -10,7 +10,7 @@ This document provides a comprehensive reference for all semantic constraints an
 
 The TyC static semantic checker must detect and report the following error types:
 
-1. **Redeclared** - Variables, functions, structs, or parameters declared multiple times
+1. **Redeclared** - Variables, functions, structs, parameters, or struct members declared multiple times (or a local variable reusing a parameter name in the same function)
 2. **UndeclaredIdentifier** - Use of variables or parameters that have not been declared
 3. **UndeclaredFunction** - Use of functions that have not been declared
 4. **UndeclaredStruct** - Use of struct types that have not been declared
@@ -23,19 +23,19 @@ The TyC static semantic checker must detect and report the following error types
 
 ## Detailed Error Specifications
 
-### 1. Redeclared Variable/Function/Struct/Parameter
+### 1. Redeclared Variable/Function/Struct/Parameter/Member
 
 **Rule:** All declarations must be unique within their respective scopes as defined in the TyC specification.
 
 **Exception:** `Redeclared(<kind>, <identifier>)`
-- `<kind>`: Type of redeclared entity (`Variable`, `Function`, `Struct`, `Parameter`)
+- `<kind>`: Type of redeclared entity (`Variable`, `Function`, `Struct`, `Parameter`, `Member`)
 - `<identifier>`: Name of the redeclared identifier
 
 **Scope-specific Rules:**
 - **Global scope:** Struct names must be unique among all struct declarations, and function names must be unique among all function declarations (no overloading). **Struct type names and function names use separate namespaces:** the same identifier may name both a struct type and a function (e.g. `struct foo { ... };` and `int foo(int x, int y) { ... }` are valid). Context disambiguates—type position in declarations vs. `(` in a call.
-- **Function scope:** Parameters must have unique names within the same function
+- **Function scope:** Parameters belong to the function's scope and are visible throughout the entire function body. Parameter names must be unique within the same parameter list. **You must not declare a local variable with the same name as a parameter anywhere in that function's body**, including inside nested `{ }` blocks; that is reported as `Redeclared(Variable, <name>)` (not shadowing). TyC does not allow inner blocks to shadow an enclosing function's parameters.
 - **Local scope (block):** Variables must have unique names within the same block
-- **Shadowing:** Variables in nested blocks can shadow variables in outer scopes
+- **Shadowing:** Variables in nested blocks may shadow **other local variables** from outer blocks in the same function, subject to the rule above (parameters cannot be shadowed).
 
 **Examples:**
 ```tyc
@@ -75,6 +75,17 @@ void main() {
 int calculate(int x, float y, int x) {  // Redeclared(Parameter, x)
     return x + y;
 }
+
+// Error: Local variable reuses parameter name (same function; not allowed even in nested blocks)
+void func(int x) {
+    int x = 10;  // Redeclared(Variable, x)
+}
+
+// Error: Duplicate struct member names in the same struct
+struct Point {
+    int x;
+    int x;  // Redeclared(Member, x)
+};
 
 // Valid: Shadowing in different scopes
 void example() {
@@ -802,7 +813,7 @@ When multiple errors are present, report them in the following order:
 ### Scope Management
 
 - **Global scope:** Functions and structs (names are unique within each kind; struct names and function names may coincide—see Redeclared rules above)
-- **Function scope:** Parameters (visible throughout function body)
+- **Function scope:** Parameters (visible throughout function body; see Redeclared rules—locals may not reuse parameter names)
 - **Local scope (block):** Variables declared in blocks `{}`
 - **Nested scopes:** Inner scopes can shadow outer scopes
 

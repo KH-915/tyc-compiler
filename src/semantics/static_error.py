@@ -16,8 +16,8 @@ class Redeclared(StaticError):
     Raised when an identifier is declared more than once in the same scope.
     
     Args:
-        kind (str): The kind of redeclared entity 
-                   ('Variable', 'Function', 'Struct', 'Parameter')
+        kind (str): The kind of redeclared entity
+                   ('Variable', 'Function', 'Struct', 'Parameter', 'Member')
         name (str): The name of the redeclared identifier
     """
     def __init__(self, kind, name):
