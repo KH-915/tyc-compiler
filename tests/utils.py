@@ -69,7 +69,7 @@ class Parser:
             return "success"
         except Exception as e:
             return str(e)
-
+        
 
 class ASTGenerator:
     """Class to generate AST from TyC source code."""
