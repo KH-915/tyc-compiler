@@ -4,8 +4,8 @@ This module contains the ASTGeneration class that converts parse trees
 into Abstract Syntax Trees using the visitor pattern.
 """
 
-from ...build.TyCVisitor import TyCVisitor
-from ...build.TyCParser import TyCParser
+from build.TyCVisitor import TyCVisitor
+from build.TyCParser import TyCParser
 from ..utils.nodes import *
 
 
@@ -77,8 +77,8 @@ class ASTGeneration(TyCVisitor):
 
     def visitLhs(self, ctx: TyCParser.LhsContext):
         if ctx.DOT():
-            return MemberAccess(Identifier(ctx.ID(0).getText()), ctx.ID(1).getText())
-        return Identifier(ctx.ID(0).getText())
+            return MemberAccess(self.visit(ctx.lhs()), ctx.ID().getText())
+        return Identifier(ctx.ID().getText())
 
     # ---------- CONTROL FLOW ----------
 
@@ -101,15 +101,20 @@ class ASTGeneration(TyCVisitor):
         return ForStmt(init, condition, update, body)
 
     def visitForInit(self, ctx: TyCParser.ForInitContext):
-        if ctx.AUTO():
-            name = ctx.ID().getText()
-            init_value = self.visit(ctx.expr())
-            return VarDecl(None, name, init_value)
-        # It's an expression (assignment, etc.)
-        return self.visit(ctx.expr())
-
+        if ctx.varDecl():
+            return self.visit(ctx.varDecl())
+        elif ctx.expr():
+            return self.visit(ctx.expr())
+        else:
+            return None
+        
     def visitForUpdate(self, ctx: TyCParser.ForUpdateContext):
-        return self.visit(ctx.expr())
+        if ctx.assignStmt():
+            return self.visit(ctx.assignStmt())
+        elif ctx.expr():
+            return self.visit(ctx.expr())
+        else:
+            return None
 
     def visitSwitchStmt(self, ctx: TyCParser.SwitchStmtContext):
         expr = self.visit(ctx.expr())

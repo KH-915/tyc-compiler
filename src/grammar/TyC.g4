@@ -31,7 +31,6 @@ stmt
     | whileStmt
     | forStmt
     | switchStmt
-    | assignStmt
     | breakStmt
     | continueStmt
     | returnStmt
@@ -56,7 +55,7 @@ forInit : varDecl | expr ;
 
 forUpdate : assignStmt | expr ;
 
-assignStmt : operand ;
+assignStmt : lhs ASSIGN expr ;
 
 switchStmt : SWITCH LP expr RP LBRACE caseBlock* defaultBlock? RBRACE ;
 
@@ -115,9 +114,9 @@ expr6
 expr7 : operand (INC | DEC)? ;
 
 operand
-    : literal                           # LiteralOperand
+    : ID argList                        # FunctionCallOperand
     | lhs                               # LhsOperand
-    | ID argList                        # FunctionCallOperand
+    | literal                           # LiteralOperand
     | LP expr RP                        # ParenthesizedOperand
     | LBRACE argList? RBRACE            # StructLiteralOperand
     ;
