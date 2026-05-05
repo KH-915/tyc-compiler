@@ -296,6 +296,17 @@ class Emitter:
         if not is_void_type(typ.return_type):
             frame.push()
         return self.jvm.emitINVOKESTATIC(lexeme, self.get_jvm_type(in_))
+    
+    def emit_invoke_virtual(self, lexeme: str, in_, frame) -> str:
+        typ = in_
+        # Pop arguments
+        list(map(lambda x: frame.pop(), typ.param_types))
+        # Pop the object reference itself
+        frame.pop()
+        # Push return type if not void
+        if not is_void_type(typ.return_type):
+            frame.push()
+        return self.jvm.emitINVOKEVIRTUAL(lexeme, self.get_jvm_type(in_))
 
     def emit_neg_op(self, in_, frame) -> str:
         """
@@ -707,3 +718,35 @@ class Emitter:
         Clear the code buffer.
         """
         self.buff.clear()
+
+    def emit_new_array(self, in_type, frame) -> str:
+        frame.pop() # Pops the length
+        frame.push() # Pushes the array reference
+        if is_int_type(in_type):
+            return self.jvm.emitNEWARRAY("int")
+        elif is_float_type(in_type):
+            return self.jvm.emitNEWARRAY("float")
+        else:
+            return self.jvm.emitANEWARRAY(self.get_jvm_type(in_type))
+
+    def emit_array_load(self, in_type, frame) -> str:
+        frame.pop() # Pops index
+        frame.pop() # Pops array ref
+        frame.push() # Pushes value
+        if is_int_type(in_type):
+            return self.jvm.emitIALOAD()
+        elif is_float_type(in_type):
+            return self.jvm.emitFALOAD()
+        else:
+            return self.jvm.emitAALOAD()
+
+    def emit_array_store(self, in_type, frame) -> str:
+        frame.pop() # Pops value
+        frame.pop() # Pops index
+        frame.pop() # Pops array ref
+        if is_int_type(in_type):
+            return self.jvm.emitIASTORE()
+        elif is_float_type(in_type):
+            return self.jvm.emitFASTORE()
+        else:
+            return self.jvm.emitAASTORE()
